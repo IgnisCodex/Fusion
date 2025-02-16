@@ -1,18 +1,18 @@
 <?php
 
-if (isset($_POST['email']) && isset($_POST['password'])) {
-    require_once __DIR__ . "/dbh.inc.php";
-    include "user.class.php";
-
+if (isset($_POST['submit'])) {
     $email = $_POST['email'];
     $password = $_POST['password'];
+    
+    include "dbh.class.php";
+    include "user.class.php";
+    include "login-contr.class.php";
 
-    $user = new User($conn, $email, $password);
-    $user->Login();
+    $contr = new LoginController($email, $password);
+    $contr->login();
+    header("location: /chat/@me");
 
 } else {
-    die("Form Data Invalid");
-
     // Invalid Request Redirection
-    header("location: /login?error=fdi");
+    header("location: /login?error=invalid_request");
 }

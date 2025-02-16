@@ -1,18 +1,7 @@
 <?php
 
 session_start();
+session_unset();
+session_destroy();
 
-if (isset($_SESSION["user"])) {
-
-    require_once __DIR__ . "/dbh.inc.php";
-    include "user.class.php";
-
-    $user = unserialize($_SESSION["user"]);
-    $user->Logout();
-
-} else {
-    die("User Not Logged In!");
-
-    // Login Required (lrq)
-    header("location: /login?error=lrq");
-}
+header("location: /login?error=none");

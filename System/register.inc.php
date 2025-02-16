@@ -1,20 +1,21 @@
 <?php
 
-if (isset($_POST['username']) && isset($_POST['name']) && isset($_POST['email']) && isset($_POST['password'])) {
-    include "dbh.class.php";
-    include "user.class.php";
-    
-    $username = $_POST['username'];
+if (isset($_POST['submit'])) {
     $name = $_POST['name'];
     $email = $_POST['email'];
+    $username = $_POST['username'];
     $password = $_POST['password'];
+    $passwordRepeat = $_POST['passwordRepeat'];
+    
+    include "dbh.class.php";
+    include "user.class.php";
+    include "register-contr.class.php";
 
-    $user = new User($conn, $email, $password, $username, $name);
-    $user->Register();
+    $contr = new RegisterController($name, $email, $username, $password, $passwordRepeat);
+    $contr->register();
+    header("location: /login?error=none&email=" . $email);
 
 } else {
-    die("Form Data Invalid");
-
     // Invalid Request Redirection
-    header("location: /login?error=fdi");
+    header("location: /register?error=invalid_request");
 }

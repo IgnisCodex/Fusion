@@ -1,155 +1,114 @@
 <?php
 
-require_once "dbh.inc.php";
+    // name VARCHAR(255) NOT NULL,
+    // email VARCHAR(255) NOT NULL,
+    // username VARCHAR(255) NOT NULL,
+    // password VARCHAR(255) NOT NULL,
 
-class User {
-    private $conn; 
-    private $mID;
+    // icon VARCHAR(255) NOT NULL,                                                             -- Path to the icon
+    // visibility TINYINT(1) NOT NULL,                                                         -- 0: Offline, 1: Online, 2: Invisable, 3: DND, 4: Idle
 
-    private $mName;
-    private $mUsername;
-    private $mEmail;
+class User extends DBH {
+    protected function createUser($name, $email, $username, $password) {
+        $sql = "INSERT INTO users (name, email, username, password, icon, visibility) VALUES (?, ?, ?, ?, ?, ?);";
+        $stmt = $this->connect()->prepare($sql);
+        
+        $password_hashed = password_hash($password, PASSWORD_DEFAULT);
 
-    private $mPassword;
-    private $mPasswordHashed;
-
-    private $mVisibility;           // Online, Offline, Invisible
-    private $mStatus;               // Custom Status
-
-    public function __construct($conn, $email, $password, $username = null, $name = null) {
-        $this->conn = $conn;
-        $this->mEmail = $email;
-        $this->mPassword = $password;
-        $this->mUsername = $username;
-        $this->mName = $name;
-    }
-
-    public function Register() {
-        // Check if email already exists
-        $sql = "SELECT email FROM users WHERE Email = ?";
-        $stmt = mysqli_stmt_init($this->conn);
-
-        if (!mysqli_stmt_prepare($stmt, $sql)) {
-            die("SQL Error");
-        }
-
-        mysqli_stmt_bind_param($stmt, "s", $this->mEmail);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_store_result($stmt);
-
-        if (mysqli_stmt_num_rows($stmt) > 0) {
-            header("location: /register?error=email_taken");
+        $config = parse_ini_file(__DIR__ . "/../config.ini");
+        $icon = $config['user_icon_default'];
+        $visibility = 0;
+        
+        if (!$stmt->execute([$name, $email, $username, $password_hashed, $icon, $visibility])) {
+            $stmt = null;
+            header("location: /register?error=stmt_failed");
             exit();
         }
 
-        // Hash the password
-        $hashedPwd = password_hash($this->mPassword, PASSWORD_DEFAULT);
-
-        // Insert user into the database
-        $sql = "INSERT INTO users (Email, Username, Name, Password) VALUES (?, ?, ?, ?)";
-        $stmt = mysqli_stmt_init($this->conn);
-
-        if (!mysqli_stmt_prepare($stmt, $sql)) {
-            die("SQL Error");
-        }
-
-        mysqli_stmt_bind_param($stmt, "ssss", $this->mEmail, $this->mUsername, $this->mName, $hashedPwd);
-        mysqli_stmt_execute($stmt);
-
-        // Redirect to login after successful registration
-        header("location: /login?register=success");
-        exit();
+        $stmt = null;
     }
 
-    public function Authenticate() {
-        $sql = "SELECT * FROM users WHERE Email = ?;";
-        $stmt = mysqli_stmt_init($this->conn);
-
-        if (!mysqli_stmt_prepare($stmt, $sql)) {
-            die("SQL Error");
+    protected function checkUser($email) {
+        $sql = "SELECT * FROM users WHERE email = ?;";
+        $stmt = $this->connect()->prepare($sql);
+        
+        if (!$stmt->execute([$email])) {
+            $stmt = null;
+            header("location: /register?error=stmt_failed");
+            exit();
         }
 
-        mysqli_stmt_bind_param($stmt, "s", $this->mEmail);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
-
-        if ($row = mysqli_fetch_assoc($result)) {
-            $this->mID = $row['ID'];
-            $this->mUsername = $row['Username'];
-            $this->mName = $row['Name'];
-
-            $this->mPasswordHashed = $row['Password'];
-
-            // TODO: Add visibility and status
-            // $this->mVisibility = $row['Visibility'];
-            // $this->mStatus = $row['Status'];
-
+        if ($stmt->rowCount() > 0) {
+            return true;
         } else {
-            // Email Invalid (eiv)
-            header("location: /login?error=eiv");
+            return false;
+        }
+    }
+
+    protected function loginUser($email, $password) {
+        $sql = "SELECT password FROM users WHERE email = ?;";
+        $stmt = $this->connect()->prepare($sql);
+
+        if (!$stmt->execute([$email])) {
+            $stmt = null;
+            header("location: /login?error=stmt_failed");
             exit();
         }
 
-        if (!password_verify($this->mPassword, $this->mPasswordHashed)) {
-            // Clear password fields for security
-            unset($this->mPassword, $this->mPasswordHashed);
-            
-            header("location: /login?error=piv");
+        if ($stmt->rowCount() == 0) {
+            $stmt = null;
+            header("location: /login?error=invalid_email");
             exit();
         }
 
-        // Clear password fields for security
-        unset($this->mPassword, $this->mPasswordHashed);
+        $password_hashed = $stmt->fetchAll(PDO::FETCH_ASSOC)[0]['password'];
+        $check = password_verify($password, $password_hashed);
+
+        if (!$check) {
+            $stmt = null;
+            header("location: /login?error=password_incorrect");
+            exit();
+        } else {
+            $sql = "SELECT * FROM users WHERE email = ?;";
+            $stmt = $this->connect()->prepare($sql);
+
+            if (!$stmt->execute([$email])) {
+                $stmt = null;
+                header("location: /login?error=stmt_failed");
+                exit();
+            }
+
+            if ($stmt->rowCount() == 0) {
+                $stmt = null;
+                header("location: /login?error=invalid_email");
+                exit();
+            }
+
+            $user = $stmt->fetchAll(PDO::FETCH_ASSOC)[0];
+
+            session_start();
+            $_SESSION["user"]["id"] = $user['id'];
+            $_SESSION["user"]["email"] = $user['email'];
+            $_SESSION["user"]["username"] = $user['username'];
+
+            $stmt = null;
+            return false;
+        }
     }
 
-    public function Login() {
+    // protected function getUser() {
+    //     $sql = "SELECT * FROM users WHERE email = ?";
+    //     $stmt = $this->connect()->prepare($sql);
         
-        $this->Authenticate();
+    //     if (!$stmt->execute([$email])) {
+    //         $stmt = null;
+    //         header("location: /register?error=stmt_failed");
+    //         exit();
+    //     }
 
-        // TODO: Set user to online
-        // $this->SetVisability("Online");
-        
-        session_start();
-        $_SESSION["user"] = serialize($this);
-        
-        header("location: /chat/@me");
-        echo "test";
-        exit();
-        exit();
-    }
+    //     $result = $stmt->fetch();
+    //     $stmt = null;
 
-    public function Logout() {
-        session_start();
-
-        // TODO: Set user to offline
-        // MAYBE: Does this need to be in here?
-        // $this->SetVisability("Offline");
-
-        session_unset();
-        session_destroy();
-        header("location: /login");
-        exit();
-    }
-
-    public function getID() {
-        return $this->mID;
-    }
-
-    public function getName() {
-        return $this->mName;
-    }
-
-    public function getEmail() {
-        return $this->mEmail;
-    }
-
-    public function getVisibility() {
-        return $this->mVisibility;
-    }
-
-    public function getStatus() {
-        return $this->mStatus;
-    }
-
-
+    //     return $result;
+    // }
 }
