@@ -91,10 +91,37 @@ class User extends DBH {
             $_SESSION["user"]["email"] = $user['email'];
             $_SESSION["user"]["username"] = $user['username'];
 
+            $this->updateSeen($user['id']);
+
             $stmt = null;
-            return false;
         }
     }
+
+
+
+    // Updates
+
+    public function updateSeen($id) {
+        $sql = "UPDATE users SET seen = ? WHERE id = ?;";
+        $stmt = $this->connect()->prepare($sql);
+
+        $seen = date("Y-m-d H:i:s");
+
+        if (!$stmt->execute([$seen, $id])) {
+            $stmt = null;
+            header("location: /chat/@me?error=stmt_failed");
+            exit();
+        }
+
+        if ($stmt->rowCount() == 0) {
+            $stmt = null;
+            header("location: /chat/@me?error=invalid_id");
+            exit();
+        }
+
+        $stmt = null;
+    }
+
 
     // protected function getUser() {
     //     $sql = "SELECT * FROM users WHERE email = ?";
