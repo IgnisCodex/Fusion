@@ -7,8 +7,6 @@ if (isset($_POST['submit'])) {
     $password = $_POST['password'];
     $passwordRepeat = $_POST['passwordRepeat'];
     
-    include "dbh.class.php";
-    include "user.class.php";
     include "register-contr.class.php";
 
     $contr = new RegisterController($name, $email, $username, $password, $passwordRepeat);

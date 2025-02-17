@@ -6,8 +6,6 @@ if (isset($_SESSION['user'])) {
 
     $id = $_SESSION['user']['id'];
     
-    include "dbh.class.php";
-    include "user.class.php";
     include "logout-contr.class.php";
 
     $contr = new LogoutController($id);

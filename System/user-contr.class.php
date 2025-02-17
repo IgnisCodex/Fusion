@@ -2,17 +2,16 @@
 
 include "user.class.php";
 
-class LoginController extends User {
-    private $mEmail;
+class UserController extends User {
+    private $mID;
     private $mPassword;
 
-    public function __construct($email, $password) {
-        $this->mEmail = $email;
-        $this->mPassword = $password;
+    public function __construct($id) {
+        $this->mID = $id;
     }
 
-    public function login() {
-        $this->loginUser($this->mEmail, $this->mPassword);
+    public function get() {
+        return $this->getUser($this->mID);
     }
 
     // Error Handlers

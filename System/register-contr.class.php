@@ -1,5 +1,7 @@
 <?php
 
+include "user.class.php";
+
 class RegisterController extends User {
     private $mName;
     private $mEmail;

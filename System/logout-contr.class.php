@@ -1,5 +1,7 @@
 <?php
 
+include "user.class.php";
+
 class LogoutController extends User {
     private $mID;
     

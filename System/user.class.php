@@ -1,12 +1,6 @@
 <?php
 
-    // name VARCHAR(255) NOT NULL,
-    // email VARCHAR(255) NOT NULL,
-    // username VARCHAR(255) NOT NULL,
-    // password VARCHAR(255) NOT NULL,
-
-    // icon VARCHAR(255) NOT NULL,                                                             -- Path to the icon
-    // visibility TINYINT(1) NOT NULL,                                                         -- 0: Offline, 1: Online, 2: Invisable, 3: DND, 4: Idle
+include_once "dbh.class.php";
 
 class User extends DBH {
     protected function createUser($name, $email, $username, $password) {
@@ -97,11 +91,9 @@ class User extends DBH {
         }
     }
 
-
-
     // Updates
 
-    public function updateSeen($id) {
+    protected function updateSeen($id) {
         $sql = "UPDATE users SET seen = ? WHERE id = ?;";
         $stmt = $this->connect()->prepare($sql);
 
@@ -123,19 +115,19 @@ class User extends DBH {
     }
 
 
-    // protected function getUser() {
-    //     $sql = "SELECT * FROM users WHERE email = ?";
-    //     $stmt = $this->connect()->prepare($sql);
+    protected function getUser($id) {
+        $sql = "SELECT * FROM users WHERE id = ?";
+        $stmt = $this->connect()->prepare($sql);
         
-    //     if (!$stmt->execute([$email])) {
-    //         $stmt = null;
-    //         header("location: /register?error=stmt_failed");
-    //         exit();
-    //     }
+        if (!$stmt->execute([$id])) {
+            $stmt = null;
+            header("location: /register?error=stmt_failed");
+            exit();
+        }
 
-    //     $result = $stmt->fetch();
-    //     $stmt = null;
+        $result = $stmt->fetch();
+        $stmt = null;
 
-    //     return $result;
-    // }
+        return $result;
+    }
 }
